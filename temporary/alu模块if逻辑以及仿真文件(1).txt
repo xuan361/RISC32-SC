@@ -1,0 +1,251 @@
+
+//ALU（算术逻辑单元）：用于逻辑指令计算和跳转指令比较
+
+module ALU(
+    input [3:0] ALUc,  // ALU操作控制码
+    input [31:0] A,     //操作数1(rs1存储的内容)
+    input [31:0] B,     //操作数2(rs2存储的内容)
+    output reg [31:0] ALUResult,   //ALU运算结果(要存储到rd的内容)
+    output reg zero    // 运算结果result的标志，result为0输出1，否则输出0
+);
+    // 进行ALU计算
+    // 0：add, 1：sub, 2：sll, 3：slt, 4:sltu, 5:xor, 6srl, 7:sra, 8:or, 9:and
+
+    wire shift_overflow = (B > 31);//判断B的值是否合理
+    always @(*) begin
+        case(ALUc)
+            4'b0000 : ALUResult = A + B;  // ADD
+            4'b0001 : ALUResult = A - B;  // SUB
+            4'b0010 : ALUResult = shift_overflow ? 32'b0 : A << B;  // SLL
+            4'b0011 : ALUResult = ($signed(A) < $signed(B)) ? 32'd1 : 32'd0;  // SLT
+            4'b0100 : ALUResult = (A < B) ? 32'd1 : 32'd0;  // SLTU
+            4'b0101 : ALUResult = A ^ B;  // XOR
+            4'b0110 : ALUResult = shift_overflow ? 32'b0 : A >> B;  // SRL
+            4'b0111 : ALUResult = shift_overflow ? 32'b0 : $signed(A) >>> B;  // SRA
+            4'b1000 : ALUResult = A | B;  // OR
+            4'b1001 : ALUResult = A & B;  // AND
+            default : ALUResult = 32'b0;  // 默认输出0
+        endcase
+        //设置zero
+            if (ALUResult) zero = 0;
+            else zero = 1;
+    end
+
+endmodule
+
+
+/*
+//if逻辑
+if (op[6:0] == 7'b0110011) begin
+    case(op[17:7])
+        10'b0000000000:ALUc = 4'b0000;//add
+        10'b0100000000:ALUc = 4'b0001;//sub
+        10'b0000000001:ALUc = 4'b0010;//sll
+        10'b0000000010:ALUc = 4'b0011;//slt
+        10'b0000000011:ALUc = 4'b0100;//sltu
+        10'b0000000100:ALUc = 4'b0101;//xor
+        10'b0000000101:ALUc = 4'b0110;//srl
+        10'b0100000101:ALUc = 4'b0111;//sra
+        10'b0000000110:ALUc = 4'b1000;//or
+        10'b0000000111:ALUc = 4'b1001;//and
+    endcase
+end
+*/
+
+
+
+
+
+
+`timescale 1ns / 1ps  // 时间单位：1ns，时间精度：1ps
+
+module tb_ALU;
+
+    // 1. 定义仿真输入信号（对应ALU模块的输入）
+    reg [3:0] ALUc;         // ALU操作控制码
+    reg [31:0] A;           // 操作数1（rs1内容）
+    reg [31:0] B;           // 操作数2（rs2内容）
+
+    // 2. 定义仿真输出信号（对应ALU模块的输出）
+    wire [31:0] ALUResult;  // ALU运算结果
+    wire zero;              // 结果零标志
+
+    // 3. 例化待仿真的ALU模块（UUT：Unit Under Test）
+    ALU UUT (
+        .ALUc(ALUc),
+        .A(A),
+        .B(B),
+        .ALUResult(ALUResult),
+        .zero(zero)
+    );
+
+    // 4. 仿真激励逻辑（生成测试信号）
+    initial begin
+        // 初始化所有输入（避免未知状态x）
+        ALUc = 4'b0000;
+        A = 32'd0;
+        B = 32'd0;
+        #10;  // 等待10ns，稳定初始状态
+
+
+        // -------------------------- 测试1：ADD（加法，ALUc=0000） --------------------------
+        ALUc = 4'b0000;
+        A = 32'd123;    // 操作数A=123
+        B = 32'd456;    // 操作数B=456
+        #10;            // 等待10ns，让ALU完成运算
+        $display("=== ADD测试 ===");
+        $display("A=%d, B=%d | 预期结果=579, 实际结果=%d | 预期zero=0, 实际zero=%b", 
+                 A, B, ALUResult, zero);
+        #10;  // 间隔10ns，切换下一个测试
+
+
+        // -------------------------- 测试2：SUB（减法，ALUc=0001） --------------------------
+        ALUc = 4'b0001;
+        A = 32'd600;    // A=600
+        B = 32'd121;    // B=121
+        #10;
+        $display("\n=== SUB测试 ===");
+        $display("A=%d, B=%d | 预期结果=479, 实际结果=%d | 预期zero=0, 实际zero=%b", 
+                 A, B, ALUResult, zero);
+        // 额外测试SUB结果为0的场景（验证zero=1）
+        A = 32'd500;
+        B = 32'd500;
+        #10;
+        $display("A=%d, B=%d | 预期结果=0, 实际结果=%d | 预期zero=1, 实际zero=%b", 
+                 A, B, ALUResult, zero);
+        #10;
+
+
+        // -------------------------- 测试3：SLL（逻辑左移，ALUc=0010） --------------------------
+        ALUc = 4'b0010;
+        A = 32'd8;      // A=8（二进制1000）
+        B = 32'd3;      // 左移3位（1000 <<3 = 1000000=64）
+        #10;
+        $display("\n=== SLL测试（正常移位） ===");
+        $display("A=%d(0b%b), B=3 | 预期结果=64, 实际结果=%d | 预期zero=0, 实际zero=%b", 
+                 A, A, ALUResult, zero);
+        // 测试移位溢出（B=32>31，预期结果=0）
+        B = 32'd32;
+        #10;
+        $display("A=%d, B=32（溢出） | 预期结果=0, 实际结果=%d | 预期zero=1, 实际zero=%b", 
+                 A, ALUResult, zero);
+        #10;
+
+
+        // -------------------------- 测试4：SLT（有符号比较，ALUc=0011） --------------------------
+        ALUc = 4'b0011;
+        A = -32'sd5;    // 标准有符号数表示：-5
+        B = 32'd3;      // 有符号数B=3 → -5 < 3，预期结果=1
+        #10;
+        $display("\n=== SLT测试（有符号比较） ===");
+        $display("A=-5, B=3 | 预期结果=1, 实际结果=%d | 预期zero=0, 实际zero=%b", 
+                 ALUResult, zero);
+        // 测试A >= B的场景（A=10, B=-2 → 10 > -2，预期结果=0）
+        A = 32'd10;
+        B = -32'sd2;    // 标准有符号数表示：-2
+        #10;
+        $display("A=10, B=-2 | 预期结果=0, 实际结果=%d | 预期zero=1, 实际zero=%b", 
+                 ALUResult, zero);
+        #10;
+
+
+        // -------------------------- 测试5：SLTU（无符号比较，ALUc=0100） --------------------------
+        ALUc = 4'b0100;
+        A = 32'd20;     // 无符号A=20
+        B = 32'd50;     // 无符号B=50 → 20 < 50，预期结果=1
+        #10;
+        $display("\n=== SLTU测试（无符号比较） ===");
+        $display("A=20, B=50 | 预期结果=1, 实际结果=%d | 预期zero=0, 实际zero=%b", 
+                 ALUResult, zero);
+        // 测试A >= B的场景（A=100, B=80 → 100>80，预期结果=0）
+        A = 32'd100;
+        B = 32'd80;
+        #10;
+        $display("A=100, B=80 | 预期结果=0, 实际结果=%d | 预期zero=1, 实际zero=%b", 
+                 ALUResult, zero);
+        #10;
+
+
+        // -------------------------- 测试6：XOR（异或，ALUc=0101） --------------------------
+        ALUc = 4'b0101;
+        A = 32'h0000_000F;  // A=0b0000...0001111
+        B = 32'h0000_00F0;  // B=0b0000...01111000
+        #10;                // XOR结果=0b0000...01110111=119
+        $display("\n=== XOR测试 ===");
+        $display("A=0x%x, B=0x%x | 预期结果=0x%x(119), 实际结果=0x%x(%d) | 预期zero=0, 实际zero=%b", 
+                 A, B, 32'h00000077, ALUResult, ALUResult, zero);
+        #10;
+
+
+        // -------------------------- 测试7：SRL（逻辑右移，ALUc=0110） --------------------------
+        ALUc = 4'b0110;
+        A = 32'd64;     // A=64（二进制1000000）
+        B = 32'd2;      // 右移2位 → 10000=16
+        #10;
+        $display("\n=== SRL测试（正常移位） ===");
+        $display("A=%d(0b%b), B=2 | 预期结果=16, 实际结果=%d | 预期zero=0, 实际zero=%b", 
+                 A, A, ALUResult, zero);
+        // 测试移位溢出（B=35>31，预期结果=0）
+        B = 32'd35;
+        #10;
+        $display("A=%d, B=35（溢出） | 预期结果=0, 实际结果=%d | 预期zero=1, 实际zero=%b", 
+                 A, ALUResult, zero);
+        #10;
+
+
+        // -------------------------- 测试8：SRA（算术右移，ALUc=0111） --------------------------
+        ALUc = 4'b0111;
+        A = -32'sd8;    // 标准有符号数表示：-8
+        B = 32'd2;      // 算术右移2位 → -2（补码：0xFFFFFFFE）
+        #10;
+        $display("\n=== SRA测试（算术右移，保持符号） ===");
+        $display("A=-8(0x%x), B=2 | 预期结果=-2(0x%x), 实际结果=%d(0x%x) | 预期zero=0, 实际zero=%b", 
+                 A, 32'hFFFFFFFE, ALUResult, ALUResult, zero);
+        #10;
+
+
+        // -------------------------- 测试9：OR（或运算，ALUc=1000） --------------------------
+        ALUc = 4'b1000;
+        A = 32'h0000_0003;  // A=0b0011
+        B = 32'h0000_000C;  // B=0b1100
+        #10;                // OR结果=0b1111=15
+        $display("\n=== OR测试 ===");
+        $display("A=0x%x, B=0x%x | 预期结果=0x%x(15), 实际结果=0x%x(%d) | 预期zero=0, 实际zero=%b", 
+                 A, B, 32'h0000000F, ALUResult, ALUResult, zero);
+        #10;
+
+
+        // -------------------------- 测试10：AND（与运算，ALUc=1001） --------------------------
+        ALUc = 4'b1001;
+        A = 32'h0000_00FF;  // A=0b11111111
+        B = 32'h0000_0033;  // B=0b00110011
+        #10;                // AND结果=0b00110011=51
+        $display("\n=== AND测试 ===");
+        $display("A=0x%x, B=0x%x | 预期结果=0x%x(51), 实际结果=0x%x(%d) | 预期zero=0, 实际zero=%b", 
+                 A, B, 32'h00000033, ALUResult, ALUResult, zero);
+        #10;
+
+
+        // -------------------------- 测试11：默认情况（ALUc=其他值） --------------------------
+        ALUc = 4'b1111;  // 未定义的控制码，触发default
+        A = 32'd1000;
+        B = 32'd2000;
+        #10;
+        $display("\n=== 默认情况测试 ===");
+        $display("ALUc=1111 | 预期结果=0, 实际结果=%d | 预期zero=1, 实际zero=%b", 
+                 ALUResult, zero);
+
+
+        // 仿真结束
+        #20;
+        $display("\n=== 所有测试完成 ===");
+        $finish;  // 终止仿真
+    end
+
+    // 添加波形导出代码（修复路径和格式，使用当前目录.vcd文件）
+    initial begin
+        $dumpfile("ALU_tb.vcd");  // 当前目录生成波形文件，无上级目录依赖
+        $dumpvars(0, tb_ALU);     // 导出tb_ALU模块所有信号
+    end
+
+endmodule
