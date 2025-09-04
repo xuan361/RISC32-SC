@@ -26,6 +26,7 @@ RISC32-SC 是一个基于 **自定义指令集架构（ISA）** 的 **32 位 RIS
  ├── rtl/          # Verilog 源码
  ├── sim/          # 仿真代码与测试用例
  ├── fpga/         # 针对 FPGA 平台的综合与部署文件
+ ├── images/         # 项目说明所需要的图片
  └── README.md     # 项目说明
 
 
@@ -100,7 +101,7 @@ RISC-V 是一个基于精简指令集计算（RISC）原则的开源指令集架
 
 ## 总设计图
 
-![image-20250902161308641](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20250902161308641.png)
+![image-20250902161308641](./images/total.png)
 
 
 
@@ -114,7 +115,7 @@ RISC-V 是一个基于精简指令集计算（RISC）原则的开源指令集架
 
 所有指令长度为32位，采用小端模式存储。主要格式如下：
 
-![image-20250902161518545](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20250902161518545.png)
+![image-20250902161518545](./images/instruction_structure.png)
 
 ```
 opcode(操作码)：指令的基本操作，这个缩写是它惯用名称。
@@ -128,8 +129,6 @@ imm：立即数
 
 
 
-
-
 ### PC
 
 - 输入： CLK, RESET, PCHold,  newAddress, 
@@ -139,9 +138,9 @@ imm：立即数
 
 ### immGen
 
-![image-20250902161518545](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20250902161518545.png)
+![image-20250902161518545](./images/instruction_structure.png)
 
-![image-20250904153304180](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20250904153304180.png)
+![image-20250904153304180](./images/imm.png)
 
 ```verilog
 ADDI rd, rs1, imm: 将寄存器rs1中的值加上立即数imm，结果存储在rd。立即数imm是12位，其中最高位是符号位。如果imm[11]为1，则需要进行符号扩展，将imm扩展到32位。
@@ -160,7 +159,7 @@ SRLI/SRAI rd, rs1, shamt: 寄存器rs1右移shamt位（逻辑/算术右移），
 
 #### R型指令包括加法、减法、逻辑运算、移位运算
 
-![image-20250902171700875](C:\Users\lenovo\AppData\Roaming\Typora\typora-user-images\image-20250902171700875.png)
+![image-20250902171700875](./images/R.png)
 
 ```verilog
 ADD rd, rs1, rs2: 将寄存器rs1和rs2中的值相加，结果存储在rd。
