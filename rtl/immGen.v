@@ -8,6 +8,7 @@ module immGen(
     wire[6:0] function7 = instruction[31:25];
     wire[4:0] shamt = instruction[31:25];
 
+
     always @(*) begin
         case(opcode)
             // R-type  
