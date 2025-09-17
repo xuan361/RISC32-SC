@@ -1,17 +1,17 @@
 // 选择写回PC的来源
 module Multiplexer31 (
-    input [1:0] PCsrc,
-    input [31:0] currentAddress_4,
-    input [31:0] currentAddress_immediate,
-    input [31:0] result,
+    input [1:0] control,
+    input [31:0] in0,
+    input [31:0] in1,
+    input [31:0] in2,
 
-    output reg[31:0] newAddress
+    output reg[31:0] out
 );
     always @(*)begin
-        case(PCsrc)
-            0:  newAddress = currentAddress_4;
-            1:  newAddress = currentAddress_immediate;
-            2:  newAddress = result;
+        case(control)
+            0:  out = in0;
+            1:  out = in1;
+            2:  out = in2;
         endcase
 
     end
