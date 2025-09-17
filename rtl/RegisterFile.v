@@ -9,13 +9,14 @@ module RegisterFile(
     input [4:0] A_addr,            // 源寄存器地址1
     input [4:0] B_addr,            // 源寄存器地址2
     input [4:0] W_addr,             // 目标寄存器地址
-    input [31:0] Data,    // 写入寄存器的数据
+    input [31:0] Data,    // 写入寄存器的数据 （rd）
 
-    output [31:0] A_data,   // rs寄存器数据输出端口
-    output [31:0] B_data    // rt寄存器数据输出端口
+    output [31:0] A_data,   // rs1寄存器数据输出
+    output [31:0] B_data    // rs2寄存器数据输出
 );
 
-    reg [31:0] register[0:31];  // 寄存器组
+    // 位宽（[msb:lsb]）必须在变量名之前，而数组的维度（[start:end]）必须在变量名之后。
+    reg [31:0] register[0:63];  // 寄存器组，包含64个独立的32位寄存器
 
     // 初始时，将32个寄存器全部赋值为0
     integer i;
