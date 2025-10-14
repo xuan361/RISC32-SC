@@ -10,9 +10,9 @@ module PC(
     output reg [31:0] currentAddress    //当前指令地址
 );
 
-    initial begin
+/*     initial begin
         currentAddress = 0;
-    end
+    end */
 
     always @(posedge CLK or negedge RESET)
     begin
