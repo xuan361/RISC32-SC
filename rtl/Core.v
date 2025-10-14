@@ -3,21 +3,21 @@ module Core(
     input CLK,
     input RESET, //cpu执行,低电平有效
 // --- 外部设备物理接口 ---
-    output reg dig1,    //数码管从左到右为1-6
-    output reg dig2,
-    output reg dig3,
-    output reg dig4, 
-    output reg dig5, 
-    output reg dig6, 
-    output reg[6:0] out, // 数码管的公共I/O接口 
-    output reg led1,     //led灯显示
-    output reg led2,
-    output reg led3,
-    output reg led4,
-    output reg led5,
-    output reg led6,
-    output reg led7,
-    output reg led8
+    output wire dig1,    //数码管从左到右为1-6
+    output wire dig2,
+    output wire dig3,
+    output wire dig4, 
+    output wire dig5, 
+    output wire dig6, 
+    output wire[6:0] out, // 数码管的公共I/O接口 
+    output wire led1,     //led灯显示
+    output wire led2,
+    output wire led3,
+    output wire led4,
+    output wire led5,
+    output wire led6,
+    output wire led7,
+    output wire led8
 
 );
 
@@ -87,8 +87,8 @@ module Core(
         .wmem(wmem),
         .memc(memc),
         .aluc(aluc),
-        .alucsrc1(alucsrc1),
-        .alucsrc2(alucsrc2),
+        .alusrc1(alusrc1),
+        .alusrc2(alusrc2),
         .wreg(wreg),
         .jal(jal),
         .PCHold(PCHold)
@@ -102,7 +102,7 @@ module Core(
         .currentAddress(currentAddress)
     );
 
-    ROM rom(
+    Rom rom(
         .A(currentAddress),
         .RamDataAddress(RamDataAddress),
         .instruction(instruction),
@@ -119,6 +119,7 @@ module Core(
     );
 
     // 二路选择器，决定写入寄存器的数据
+    wire [31:0] currentAddress_4; // 显式定义为32位
     assign currentAddress_4 = currentAddress + 4;
     Multiplexer21 m21_0(
         .control(jal),
@@ -170,7 +171,7 @@ module Core(
         .zero(zero),
         .divReady(divReady)
     );
-
+    wire [31:0] currentAddress_Imm;
     assign currentAddress_Imm = currentAddress + immExt;
     // 三路选择器，选择写回pc的数据源
     Multiplexer31 m31_0(

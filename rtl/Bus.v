@@ -5,7 +5,7 @@ module Bus(
     input RESET,
     // 信号
     input wmem,           //读写信号，1为写，0为读
-    input memc,             //控制写入字节数，memc=0为1字节，memc=1为两个字节, memc=2为4个字节
+    input[2:0] memc,             //控制写入字节数，memc=0为1字节，memc=1为两个字节, memc=2为4个字节
     // 输入数据
     input [31:0] A,     //地址 (ALU的result)
     input [31:0] Di,    //输入数据 (B_data)
@@ -20,21 +20,21 @@ module Bus(
     input wire uart_rx,
 
 // --- 外部设备物理接口 ---
-    output reg dig1,    //数码管从左到右为1-6
-    output reg dig2,
-    output reg dig3,
-    output reg dig4, 
-    output reg dig5, 
-    output reg dig6, 
-    output reg[6:0] out, // 数码管的公共I/O接口 
-    output reg led1,     //led灯显示
-    output reg led2,
-    output reg led3,
-    output reg led4,
-    output reg led5,
-    output reg led6,
-    output reg led7,
-    output reg led8
+    output wire dig1,    //数码管从左到右为1-6
+    output wire dig2,
+    output wire dig3,
+    output wire dig4, 
+    output wire dig5, 
+    output wire dig6, 
+    output wire[6:0] out, // 数码管的公共I/O接口 
+    output wire led1,     //led灯显示
+    output wire led2,
+    output wire led3,
+    output wire led4,
+    output wire led5,
+    output wire led6,
+    output wire led7,
+    output wire led8
 );
     // 片选信号
     reg wRam;

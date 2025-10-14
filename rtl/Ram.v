@@ -3,7 +3,7 @@ module Ram(
     input CLK,
     input RESET,
     input wmem,           //读写信号，1为写，0为读
-    input memc,             //控制写入字节数，memc=0为1字节，memc=1为两个字节, memc=2为4个字节
+    input[2:0] memc,             //控制写入字节数，memc=0为1字节，memc=1为两个字节, memc=2为4个字节
     // 输入数据
     input [31:0] A_Ram,     //地址 (Core传来的地址)
     input [31:0] Di_Ram,    //输入数据 (B_data)
