@@ -1,7 +1,7 @@
 module ControlUnit(
     input  wire[16:0]  op,   //17位操作码
     input wire zero, // ALU的zero输出,作为条件，zero=0为真，zero=1为假
-    input wire divReady,    // 除法模块是否就绪
+    input wire divReady,    // 除法模块是否就绪，默认为0
 
     // 控制信号
     output reg[1:0]    m2reg, //决定写回寄存器文件来源。 0：把ALU的运算结果传回，1：把数据存储器的数据传回 2:把立即数左移后的数据传回 
@@ -92,7 +92,11 @@ module ControlUnit(
                     default: aluc = 5'b00000; // 优化：补充无效function3的默认值
                 endcase
                 if(aluc >= 5'd20 && aluc < 5'd24) begin
-                    PCHold = ~divReady; // 优化：简化逻辑（等价于原if-else）
+                    if(!divReady) PCHold = 1'b1;
+                    else PCHold = 1'b0;
+                end
+                else begin
+                    PCHold = 1'b0;
                 end
 
                 m2reg = 2'b00;
@@ -100,7 +104,6 @@ module ControlUnit(
                 wmem = 1'b0;
                 memc = 3'b000;
                 jal = 1'b0;
-                PCHold = 1'b0;
 
             end 
 

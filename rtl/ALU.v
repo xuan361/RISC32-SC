@@ -13,7 +13,7 @@ module ALU(
     input   [31:0]  B,
     output  [31:0]  Result,
     output          zero,
-    output  reg     divReady    // divReady = 1 除法/求余完成
+    output  reg     divReady    // divReady 默认为0  除法/求余完成变为1然后下一周期马上变为0
 );
 
     // ========== 操作码定义 ==========
@@ -118,7 +118,7 @@ module ALU(
     always @(posedge CLK or negedge RESET) begin
         if (!RESET) begin
             state       <= FSM_IDLE;
-            divReady    <= 1'b1;
+            divReady    <= 1'b0;
             seq_result  <= 32'd0;
             // 清空除法寄存器
             div_op <= 5'd0;
@@ -215,6 +215,7 @@ module ALU(
                 // 计算完成
                 FSM_DONE: begin
                     state <= FSM_IDLE;
+                    divReady    <= 1'b0;
                 end
 
                 default: begin

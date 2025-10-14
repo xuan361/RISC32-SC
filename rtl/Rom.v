@@ -8,7 +8,7 @@ module Rom(
     // ROM存储区
     reg[31:0] ROM[0:255];
     initial begin 
-        $readmemb("..\assembler\data\output.txt", ROM);
+        $readmemb("D:/learn/RISC32-SC/RISC32-SC/assembler/data/output.txt", ROM);
     end
     always @(*)begin
         instruction = ROM[A >> 2];  // 指令

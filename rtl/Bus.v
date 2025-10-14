@@ -48,10 +48,10 @@ module Bus(
     // 输入数据
     reg[31:0] Di_Ram;
     // 输出数据
-    reg[31:0] Do_Ram;    //Ram的输出数据
-    reg[31:0] Do_Timer;    
-    reg[31:0] Do_Uart;    
-    reg[31:0] Do_Gpio;    
+    wire [31:0] Do_Ram;    //Ram的输出数据
+    wire [31:0] Do_Timer;    
+    wire [31:0] Do_Uart;    
+    wire [31:0] Do_Gpio;    
 
     always @(*) begin
         Di_Ram = Di;
