@@ -1,4 +1,6 @@
-//  Uart: UART串口通信模块 (行为模型)
+//  Uart: UART串口通信模块 (全双工)
+// 发送：CPU 向 Uart 模块写入数据后立刻发送
+// 接收：Uart 模块检测到uart_rx下降沿后，立刻接收
 // 未完成
 module Uart#(
     parameter SYS_CLK_FREQ = 50_000_000, // 定义系统时钟为 50 MHz
@@ -59,7 +61,6 @@ module Uart#(
                         // 仅当发送空闲时才接收新数据
                         if (uart_status[0] == 1'b0) begin
                             uart_txdata <= Di;
-                            uart_status[0] <= 1'b1; // 设置为发送忙状态 
                         end
                     end
                 // STATUS 和 RXDATA 寄存器通常为只读，或有特定写操作清除标志位
@@ -84,16 +85,16 @@ module Uart#(
         end
     end
 
-    // 当CPU读取接收数据寄存器后，清除接收完成标志
-    wire rx_read_signal = !wmem && (A_UART == 5'h10);
-    always @(posedge CLK or negedge RESET) begin
-        if (!RESET) begin
-            uart_status[1] <= 1'b0;
-        end else if (rx_read_signal) begin
-            uart_status[1] <= 1'b0; // 读操作后清除标志
-        end
-        // 注意: 接收完成标志由接收器逻辑设置
-    end
+    // // 当CPU读取接收数据寄存器后，清除接收完成标志
+    // wire rx_read_signal = !wmem && (A_UART == 5'h10);
+    // always @(posedge CLK or negedge RESET) begin
+    //     if (!RESET) begin
+    //         uart_status[1] <= 1'b0;
+    //     end else if (rx_read_signal) begin
+    //         uart_status[1] <= 1'b0; // 读操作后清除标志
+    //     end
+    //     // 注意: 接收完成标志由接收器逻辑设置
+    // end
 
 
 // Uart 发送器 tx
@@ -105,13 +106,13 @@ module Uart#(
 
     reg [17:0] tx_clk_count; // 波特率时钟计数器
     reg [3:0]  tx_bit_index; // 当前发送的数据位索引
-    reg [7:0]  tx_data_reg;  // 待发送的8位数据
     reg        tx_reg;       // 输出到uart_tx引脚的寄存器
+    wire [7:0]  tx_data_reg = uart_txdata[7:0]; // 待发送的8位数据
 
     assign uart_tx = tx_reg; // 连接输出引脚
 
     // 触发发送的信号：CPU可以向TXDATA寄存器写入数据
-    wire tx_start_signal = wmem && (A_UART == 5'h0c);
+    wire tx_start_signal = wmem && (A_UART == 5'h0c) && wUart;
 
     always @(posedge CLK or negedge RESET) begin
     if (!RESET) begin
@@ -120,19 +121,15 @@ module Uart#(
             tx_bit_index <= 0;
             uart_status[0] <= 1'b0;
             tx_reg       <= 1'b1; // TX线在空闲时为高电平
-            tx_data_reg  <= 8'b0;
         end else begin
             case (tx_state)
                 TX_FREE: begin
                     // 如果发送被使能，并且CPU写入了数据，则开始发送
                     if (tx_start_signal && tx_enable) begin
                         uart_status[0] <= 1'b1;                // 设置发送忙标志
-                        tx_data_reg  <= Di[7:0];      // 锁存待发送数据
                         tx_clk_count <= 0;
                         tx_state     <= TX_START;
-                    end else begin
-                        uart_status[0] <= 1'b0;                // 保持空闲状态
-                    end
+                    end 
                 end
                 TX_START: begin
                     tx_reg <= 1'b0; // 发送起始位 (低电平)
@@ -194,6 +191,7 @@ module Uart#(
             rx_clk_count <= 0;
             rx_bit_index <= 0;
             uart_rxdata  <= 32'b0;
+            uart_status[1] <= 1'b1;
         end else begin
             case (rx_state)
                 RX_FREE: begin
@@ -201,6 +199,8 @@ module Uart#(
                     if (rx_start_signal) begin
                         rx_state     <= RX_START;
                         rx_clk_count <= 0;
+                        uart_status[1] <= 1'b0; // 设置接收忙标志
+
                     end
                 end
                 
