@@ -146,6 +146,8 @@ module ControlUnit(
                     3'b010: memc = 3'b010;   // lw
                     3'b100: memc = 3'b000;   // lbu 无符号
                     3'b101: memc = 3'b001;   // lhu 无符号
+                    // --- 修复：添加 default 分支 ---
+                    default: memc = 3'b010; // 或者 3'bxxx，或一个默认的错误值
                 endcase
 
                 PCsrc = 2'b00;
@@ -180,6 +182,8 @@ module ControlUnit(
                     3'b000: memc = 3'b000;   // sb
                     3'b001: memc = 3'b001;   // sh
                     3'b010: memc = 3'b010;   // sw
+                    // --- 修复：添加 default 分支 ---
+                    default: memc = 3'b010; // 或者 3'bxxx
                 endcase
 
                 m2reg = 2'b00;
@@ -204,6 +208,7 @@ module ControlUnit(
                     3'b101: aluc = 5'b01101;  //bge
                     3'b010: aluc = 5'b01110;  //bltu
                     3'b111: aluc = 5'b01111;  //bgeu
+                    default: aluc = 5'b01010; // 默认为 beq 或一个无效值
                 endcase
                 if(!zero) PCsrc = 2'b01;  //跳转
                 else  PCsrc = 2'b00;  //不跳转

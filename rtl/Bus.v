@@ -106,8 +106,17 @@ module Bus(
         endcase
     end
 
-    
-    Ram ram(CLK, RESET, wRam, memc, A_Ram, Di_Ram, Do_Ram);
+
+    Ram ram(
+        .CLK(CLK),
+        .RESET(RESET),
+        .cs(wRam),       // Ram 的片选端口连接到 Bus 的 wRam
+        .wmem(wmem),       // Ram 的写使能端口连接到 Bus 的主 wmem
+        .memc(memc),
+        .A_Ram(A_Ram),
+        .Di_Ram(Di_Ram),
+        .Do_Ram(Do_Ram)
+    );
     Timer timer(CLK, RESET, Do_Timer);
     
     // 仍需完善

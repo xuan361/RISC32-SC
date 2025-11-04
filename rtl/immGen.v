@@ -50,7 +50,7 @@ module immGen(
 
 
             // B-type
-            7'b1100011: begin
+            7'b1100011: begin   //beq, bne, blt, bge, bltu, bgeu
                 immExt = {{19{instruction[31]}},     // 19 位符号扩展
                         instruction[31],           // imm[12]
                         instruction[7],            // imm[11]

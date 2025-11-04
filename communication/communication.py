@@ -3,7 +3,7 @@ import time
 import sys
 
 # --- 配置参数 ---
-SERIAL_PORT = "COM7"  # 串口号
+SERIAL_PORT = "COM9"  # 串口号
 BAUD_RATE = 9600  # 波特率
 TIMEOUT = None  # 设置为 None 表示阻塞读取，直到接收到所需字节数
 
