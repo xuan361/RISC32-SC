@@ -24,25 +24,34 @@ module immGen(
                 else if(function3 == 3'b101) begin
                     if(function7 == 7'b0000000)   immExt = {27'b0, shamt}; // SRLI
                     else if(function7 == 7'b0100000)   immExt = {27'b0, shamt}; // SRAI
+                    else immExt = {{20{instruction[31]}}, instruction[31:20]};
                 end
                 else immExt = {{20{instruction[31]}}, instruction[31:20]};
             end
             7'b0000011:begin    // load指令：lb lh lw lbu lhu
-                immExt = {20'b0, instruction[31:20]};
+                immExt = {{20{instruction[31]}}, instruction[31:20]}; // <-- 修正
             end
-            7'b1100111:begin    // jair 
-                immExt = {20'b0, instruction[31:20]};   // 可能需要符号扩展
+            7'b1100111:begin    // jalr 
+                immExt = {{20{instruction[31]}}, instruction[31:20]};   // 可能需要符号扩展
             end
 
-            // S-type
+
+            // S-type - 已修正
             7'b0100011:begin
-                immExt = {20'b0, instruction[31:25], instruction[11:7]};
+                immExt = {{20{instruction[31]}}, instruction[31:25], instruction[11:7]}; // <-- 修正
             end
+
 
             // B-type
-            7'b1100011:begin
-                immExt = {19'b0, instruction[31], instruction[7], instruction[30:25], instruction[11:8], 1'b0};
+            7'b1100011: begin
+                immExt = {{19{instruction[31]}},     // 19 位符号扩展
+                        instruction[31],           // imm[12]
+                        instruction[7],            // imm[11]
+                        instruction[30:25],        // imm[10:5]
+                        instruction[11:8],         // imm[4:1]
+                        1'b0};                     // imm[0]
             end
+
 
             // U-type
             7'b0110111 :begin   // lui imm左移12位
@@ -53,8 +62,13 @@ module immGen(
             end
 
             // J-type
-            7'b1101111:begin
-                immExt = {11'b0, instruction[31], instruction[19:12], instruction[20], instruction[30:21], 1'b0};
+            7'b1101111: begin  // JAL
+                immExt = {{11{instruction[31]}},   // 11 位符号扩展
+                        instruction[31],        // imm[20]
+                        instruction[19:12],     // imm[19:12]
+                        instruction[20],        // imm[11]
+                        instruction[30:21],     // imm[10:1]
+                        1'b0};                  // imm[0]
             end
 
             default: begin

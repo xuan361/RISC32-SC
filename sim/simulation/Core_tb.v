@@ -7,6 +7,7 @@ module Core_tb;
     // -------------------------------------------------------------------------
     reg CLK;
     reg RESET; 
+    reg uart_rx;
 
     // 外部设备物理接口 (仅作为输出观察)
     wire dig1;
@@ -24,6 +25,7 @@ module Core_tb;
     wire led6;
     wire led7;
     wire led8;
+    wire uart_tx;
     
     // -------------------------------------------------------------------------
     // 2. ROM 文件模拟 (重要: 创建一个模拟的 output.txt)
@@ -57,10 +59,13 @@ module Core_tb;
         .led2(led2),
         .led3(led3),
         .led4(led4),
-        .led5(led5),
-        .led6(led6),
-        .led7(led7),
-        .led8(led8)
+        // .led5(led5),
+        // .led6(led6),
+        // .led7(led7),
+        // .led8(led8),
+        .uart_tx(uart_tx),
+        .uart_rx(uart_rx)
+
     );
 
     // -------------------------------------------------------------------------

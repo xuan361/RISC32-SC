@@ -1,95 +1,51 @@
-# RISC-V Assembler Test Suite
-# 该文件用于测试Python汇编器的功能覆盖度
+# t0 UART 基地址 (0x30000000)
+# t1 临时状态值
+# s0 数据指针 ，指向要发送的第一个数据
+# a0 当前要发送的字符
+# a7 计数器
+# t2 临时寄存器，用于存放 1, 2, 5
 
-_start:
-    # ======================================================================
-    # 1. I-Type (立即数指令) 和 R-Type (寄存器-寄存器指令) 测试
-    # ======================================================================
-    # 使用别名初始化寄存器
-    addi a0, zero, 10      # a0 (x10) = 10
-    addi a1, x0, -2        # a1 (x11) = -2 (测试负立即数)
+lui   t0, 0x30000       # t0 = 0x30000000 (UART 基地址)
+addi  t1, zero, 3       # t1 = 3 (二进制..0011)
+sw    t1, 0(t0)         # 将 3 写入 0x30000000 (UART_CTRL)
+                        # 第0位(发送)和第1位(接收)都为1（使能）
 
-    # --- R-Type 算术逻辑指令 ---
-    add  a2, a0, a1        # a2 = a0 + a1 = 8
-    sub  t0, a2, a0        # t0 (x5) = a2 - a0 = -2
-    xor  t1, a2, a0        # t1 (x6) = 8 ^ 10
-    or   t2, t1, a0        # t2 (x7) = t1 | 10
-    and  gp, t1, a0        # gp (x3) = t1 & 10
-    sll  s1, a0, a2        # s1 (x9) = 10 << 8 (逻辑左移)
-    srl  s2, a0, a1        # s2 (x18) = 10 >> -2 (逻辑右移)
-    sra  s3, t0, a0        # s3 (x19) = -2 >> 10 (算术右移)
-    slt  fp, a1, a0        # fp/s0 (x8) = (-2 < 10) ? 1 : 0 (结果为1)
-    sltu zero, a1, a0      # 比较无符号数，结果丢弃到zero寄存器
-
-    # --- R-Type (M扩展) ---
-    mul   a3, a0, a1       # a3 = 10 * -2 = -20
-    div   a4, a3, a0       # a4 = -20 / 10 = -2
-    rem   a5, a0, a2       # a5 = 10 % 8 = 2
-
-    # --- 更多 I-Type 指令 ---
-    xori  t3, a0, 0xFF     # t3 (x28) = a0 ^ 255 (测试16进制立即数)
-    ori   t4, a1, 42       # t4 (x29) = a1 | 42
-    slti  t5, a1, 100      # t5 (x30) = (-2 < 100) ? 1 : 0 (结果为1)
-    sltiu t6, a1, 100      # t6 (x31) = (unsigned(-2) < 100) ? 1 : 0 (结果为0)
-
-    # --- I-Type (移位立即数) ---
-    slli  s4, a0, 4        # s4 = a0 << 4
-    srli  s5, s4, 2        # s5 = s4 >> 2
-    srai  s6, t0, 1        # s6 = -2 >> 1 = -1 (算术右移)
+# (设置要发送的数据指针, 假设 第一个数据 存在 0x10000004)
+lui   s0, 0x10000       # s0 = 0x10000000
+addi  s0, s0, 4         # s0 = 0x10000004
 
 
-    # ======================================================================
-    # 2. Load/Store (加载/存储) 和 U-Type (高位立即数) 测试
-    # ======================================================================
-    addi  sp, sp, -16      # 为栈分配16字节空间
+addi  t2, zero, 1       # t2 = 1
+sb    t2, 0(s0)         # 将 1 存入内存地址 0x10000004
 
-    # --- S-Type (存储指令) ---
-    sw    a0, 0(sp)        # 将 a0 (10) 存入 [sp+0]
-    sh    a1, 4(sp)        # 将 a1 (-2) 的低16位存入 [sp+4]
-    sb    a2, 6(sp)        # 将 a2 (8) 的低8位存入 [sp+6]
+addi  t2, zero, 2       # t2 = 2
+sb    t2, 1(s0)         # 将 2 存入内存地址 0x10000005
 
-    # --- I-Type (加载指令) ---
-    lw    s7, 0(sp)        # s7 = Mem[sp+0], s7应为10
-    lh    s8, 4(sp)        # s8 = Mem[sp+4], s8应为-2
-    lb    s9, 6(sp)        # s9 = Mem[sp+6], s9应为8
-    lhu   s10, 4(sp)       # 无符号加载半字
-    lbu   s11, 6(sp)       # 无符号加载字节
-
-    # --- U-Type 指令 ---
-    lui   tp, 0xABCDE      # tp (x4) = 0xABCDE000 (加载高20位)
-    auipc ra, 0            # ra (x1) = PC + 0, 将当前PC地址存入ra
+addi  t2, zero, 5       # t2 = 5
+sb    t2, 2(s0)         # 将 5 存入内存地址 0x10000006
 
 
-    # ======================================================================
-    # 3. Branch/Jump (分支/跳转) 测试 (B-Type 和 J-Type)
-    # ======================================================================
-branch_tests:
-    beq   s7, a0, forward_branch  # s7和a0都应为10, 此跳转会成功
-    add   zero, zero, zero        # 这条指令应该被跳过 (NOP)
 
-forward_branch:
-    addi  a7, zero, 3       # 初始化循环计数器
-loop_start:
-    bne   a7, zero, loop_start  # 这会是一个死循环，我们用jal跳出
-    jal   ra, function_call   # 跳转到函数，并将返回地址存入ra
-
-backward_branch_target:
-    blt   s8, s9, branch_ok   # s8(-2) < s9(8), 此跳转会成功
-    add   zero, zero, zero    # 这条指令应该被跳过 (NOP)
-branch_ok:
-    bge   s9, s8, final_jump  # s9(8) >= s8(-2), 此跳转会成功
-    add   zero, zero, zero    # 这条指令应该被跳过 (NOP)
-
-final_jump:
-    jal   zero, _end          # 无条件跳转到程序末尾 (不保存返回地址)
+addi  a7, zero, 3       # 初始化计数器 a7 = 3 (发送3个字符)
 
 
-# 一个简单的“函数”示例
-function_call:
-    addi  sp, sp, 8        # 模拟一些操作
-    jalr  zero, ra, 0      # JALR指令, 从函数返回 (跳转到ra中的地址)
+tx_loop_start:
+    beq   a7, zero, tx_loop_end # 计数器为0, 则结束
+    lbu   a0, 0(s0)         # 从 s0 指向的地址加载数据到 a0
+                            # 依次加载1 2 5
 
 
-_end:
-    # 程序结束, 进入一个无限循环
-    beq   zero, zero, _end
+wait_tx:
+    lw    t1, 4(t0)         # 从地址t0+4（0x30000004）加载UART_STATUS的值到t1
+    andi  t1, t1, 1         
+    bne   t1, zero, wait_tx 
+
+
+sw    a0, 12(t0)        # 将 a0 写入 0x3000000c (TXDATA)
+    addi  s0, s0, 1         # 数据指针+1
+    addi  a7, a7, -1        # 计数器-1
+    jal   zero, tx_loop_start # 跳回外层循环
+
+tx_loop_end:
+    # .. 发送完毕
+    jal   zero, tx_loop_end

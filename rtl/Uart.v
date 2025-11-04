@@ -4,7 +4,7 @@
 // 未完成
 module Uart#(
     parameter SYS_CLK_FREQ = 50_000_000, // 定义系统时钟为 50 MHz
-    parameter DEFAULT_BAUD = 115200      // 定义默认波特率为 115200
+    parameter DEFAULT_BAUD = 9600      // 定义默认波特率为 115200
 )(
     input           CLK,
     input           RESET,
@@ -47,7 +47,7 @@ module Uart#(
 // --- 写操作逻辑 ---
     always @(posedge CLK or negedge RESET) begin
         if (!RESET) begin
-            uart_ctrl   <= 2'b00;
+            uart_ctrl   <= 2'b11;
             uart_status <= 2'b00; // 初始状态：发送空闲，未接收完成
             uart_baud   <= DEFAULT_BAUD;
             uart_txdata <= 32'h0;
@@ -57,12 +57,13 @@ module Uart#(
             case(A_UART[4:0]) // 根据地址偏移选择寄存器
                 5'h00: uart_ctrl   <= Di;
                 5'h08: uart_baud   <= Di;
-                5'h0c: begin
+                5'h0c: uart_txdata <= Di;
+/*                     begin   
                         // 仅当发送空闲时才接收新数据
                         if (uart_status[0] == 1'b0) begin
                             uart_txdata <= Di;
                         end
-                    end
+                    end */
                 // STATUS 和 RXDATA 寄存器通常为只读，或有特定写操作清除标志位
                 default: ;
             endcase
@@ -160,6 +161,7 @@ module Uart#(
                     if (tx_clk_count == clk_div - 1) begin
                         tx_clk_count <= 0;
                         tx_state     <= TX_FREE; // 发送完成，返回空闲状态
+                        uart_status[0] <= 1'b0; // 设置发送空闲标志
                     end else begin
                         tx_clk_count <= tx_clk_count + 1;
                     end

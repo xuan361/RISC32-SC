@@ -57,8 +57,8 @@ module ALU(
     always @(*) begin
         case (aluc)
             // 基础运算
-            OP_ADD:  comb_result = A + B;
-            OP_SUB:  comb_result = A - B;
+            OP_ADD:  comb_result = $signed(A) + $signed(B);
+            OP_SUB:  comb_result = $signed(A) - $signed(B);
             OP_SLL:  comb_result = A << B[4:0];
             OP_SLT:  comb_result = ($signed(A) < $signed(B)) ? 32'd1 : 32'd0;
             OP_SLTU: comb_result = (A < B) ? 32'd1 : 32'd0;

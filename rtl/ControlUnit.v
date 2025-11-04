@@ -152,7 +152,7 @@ module ControlUnit(
                 wmem = 1'b0;
                 aluc = 5'b00000;
                 alusrc1 = 1'b0;
-                alusrc2 = 1'b0;
+                alusrc2 = 1'b1;
                 jal = 1'b0;
                 PCHold = 1'b0;
             end
@@ -186,7 +186,7 @@ module ControlUnit(
                 PCsrc = 2'b00;
                 aluc = 5'b00000;
                 alusrc1 = 1'b0;
-                alusrc2 = 1'b0;
+                alusrc2 = 1'b1;
                 jal = 1'b0;
                 PCHold = 1'b0;
             end

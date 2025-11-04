@@ -19,11 +19,8 @@ module Gpio(
     output reg led1,     //led灯显示
     output reg led2,
     output reg led3,
-    output reg led4,
-    output reg led5,
-    output reg led6,
-    output reg led7,
-    output reg led8
+    output reg led4
+
 
 /*     output [7:0]    led_out,    // 8位LED灯的输出信号
     output [7:0]    smg1_out,   // 数码管1的段选信号
@@ -33,6 +30,10 @@ module Gpio(
     output [7:0]    smg5_out,
     output [7:0]    smg6_out */
 );
+    reg led5;
+    reg led6;
+    reg led7;
+    reg led8;
 
     // 内部寄存器
     reg [7:0] led_reg;
@@ -103,7 +104,7 @@ module Gpio(
 
     // 动态扫描的核心思想：
     // 利用人眼的视觉暂留效应，在极短的时间内轮流点亮每一个数码管，让它们看起来像是同时点亮的。
-    always @(posedge RESET or negedge RESET) begin
+    always @(posedge CLK or negedge RESET) begin
         if(!RESET) begin
             digit_select <= 2'b00;
             dig_counter <= 0;
@@ -184,7 +185,7 @@ module Gpio(
 
 
 // led灯显示逻辑
-    always @(posedge RESET or negedge RESET) begin
+    always @(posedge CLK or negedge RESET) begin
         if(!RESET)begin
             {led8, led7, led6, led5, led4, led3, led2, led1} = 8'b00000000;
         end

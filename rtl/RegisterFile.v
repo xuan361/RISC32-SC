@@ -38,7 +38,9 @@ module RegisterFile(
         else begin
             // wreg为真，写入数据
             if (wreg) begin
-                register[W_addr] = Data;
+                if(W_addr != 0) begin 
+                    register[W_addr] = Data;
+                end
             end
         end
     end
