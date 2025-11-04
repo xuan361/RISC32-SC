@@ -6,7 +6,7 @@ module immGen(
     wire[6:0] opcode = instruction[6:0];    //基本操作码
     wire[2:0] function3 = instruction[14:12];
     wire[6:0] function7 = instruction[31:25];
-    wire[4:0] shamt = instruction[31:25];
+    wire[4:0] shamt = instruction[24:20];
 
 
     always @(*) begin
@@ -14,6 +14,7 @@ module immGen(
             // R-type  
             7'b0110011:begin
                 // 没有立即数
+                immExt = 32'b0; // R-type没有立即数, 默认给0
             end
 
             // I-type
@@ -22,10 +23,16 @@ module immGen(
                     immExt = {27'b0, shamt};
                 end
                 else if(function3 == 3'b101) begin
-                    if(function7 == 7'b0000000)   immExt = {27'b0, shamt}; // SRLI
-                    else if(function7 == 7'b0100000)   immExt = {27'b0, shamt}; // SRAI
-                    else immExt = {{20{instruction[31]}}, instruction[31:20]};
+                    // 仅当是SRLI或SRAI时，才使用shamt
+                    if(function7 == 7'b0000000 || function7 == 7'b0100000) begin
+                        immExt = {27'b0, shamt};
+                    end
+                    else begin
+                        // (保留) 理论上function3=101时 funct7不会是其他值
+                        immExt = 32'hxxxxxxxx; 
+                    end
                 end
+                // 其他所有I-type算术指令 (ADDI, SLTI, ANDI, ORI, XORI)
                 else immExt = {{20{instruction[31]}}, instruction[31:20]};
             end
             7'b0000011:begin    // load指令：lb lh lw lbu lhu
