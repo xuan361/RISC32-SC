@@ -206,7 +206,7 @@ module ControlUnit(
                     3'b001: aluc = 5'b01011;  //bne
                     3'b100: aluc = 5'b01100;  //blt
                     3'b101: aluc = 5'b01101;  //bge
-                    3'b010: aluc = 5'b01110;  //bltu
+                    3'b110: aluc = 5'b01110;  //bltu
                     3'b111: aluc = 5'b01111;  //bgeu
                     default: aluc = 5'b01010; // 默认为 beq 或一个无效值
                 endcase

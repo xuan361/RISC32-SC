@@ -7,6 +7,7 @@ module Core_tb;
     // -------------------------------------------------------------------------
     reg CLK;
     reg RESET; 
+    reg wait_transport;
     reg uart_rx;
 
     // 外部设备物理接口 (仅作为输出观察)
@@ -21,10 +22,7 @@ module Core_tb;
     wire led2;
     wire led3;
     wire led4;
-    wire led5;
-    wire led6;
-    wire led7;
-    wire led8;
+
     wire uart_tx;
     
     // -------------------------------------------------------------------------
@@ -46,7 +44,7 @@ module Core_tb;
     Core DUT (
         .CLK(CLK),
         .RESET(RESET),
-        
+        .wait_transport(wait_transport),
         // 外部设备接口连接
         .dig1(dig1),
         .dig2(dig2),
@@ -75,6 +73,7 @@ module Core_tb;
     // 时钟生成 (周期 20ns, 频率 50MHz)
     parameter CLK_PERIOD = 20;
     initial begin
+        wait_transport = 1'b1;
         CLK = 1'b0;
         forever #(CLK_PERIOD / 2) CLK = ~CLK;
     end

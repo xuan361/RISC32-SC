@@ -109,21 +109,22 @@ module Uart#(
     reg [17:0] tx_clk_count; // 波特率时钟计数器
     reg [3:0]  tx_bit_index; // 当前发送的数据位索引
     reg        tx_reg;       // 输出到uart_tx引脚的寄存器
-    wire [7:0]  tx_data_reg = uart_txdata[7:0]; // 待发送的8位数据
 
     assign uart_tx = tx_reg; // 连接输出引脚
 
     // 触发发送的信号：CPU可以向TXDATA寄存器写入数据
     wire tx_start_signal = wmem && (A_UART == 5'h0c) && wUart;
 
+
     always @(posedge CLK or negedge RESET) begin
-    if (!RESET) begin
-            tx_state     <= TX_FREE;
-            tx_clk_count <= 0;
-            tx_bit_index <= 0;
-            tx_busy_flag <= 1'b0;
-            tx_reg       <= 1'b1; // TX线在空闲时为高电平
-        end else begin
+        if (!RESET) begin
+                tx_state     <= TX_FREE;
+                tx_clk_count <= 0;
+                tx_bit_index <= 0;
+                tx_busy_flag <= 1'b0;
+                tx_reg       <= 1'b1; // TX线在空闲时为高电平
+        end 
+        else begin
             case (tx_state)
                 TX_FREE: begin
                     // 如果发送被使能，并且CPU写入了数据，则开始发送
@@ -144,7 +145,7 @@ module Uart#(
                     end
                 end
                 TX_DATA: begin
-                    tx_reg <= tx_data_reg[tx_bit_index]; // 依次发送8个数据位
+                    tx_reg <= uart_txdata[tx_bit_index]; // 依次发送8个数据位
                     if (tx_clk_count == clk_div - 1) begin
                         tx_clk_count <= 0;
                         if (tx_bit_index == 7) begin
@@ -167,7 +168,7 @@ module Uart#(
                         tx_clk_count <= tx_clk_count + 1;
                     end
                 end
-                
+                    
                 default: tx_state <= TX_FREE;
 
             endcase

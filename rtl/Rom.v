@@ -17,7 +17,7 @@ module Rom(
         for( i = 0; i < 256; i = i + 1)begin
             ROM[i] = 32'b0;
         end
-        // $readmemb("D:/learn/RISC32-SC/RISC32-SC/assembler/data/output.txt", ROM);
+        $readmemb("D:/learn/RISC32-SC/RISC32-SC/assembler/data/output.txt", ROM);
     end
 
     // 动态下载机器码到ROM

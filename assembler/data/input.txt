@@ -1,82 +1,52 @@
-# 目标：发送 "1", "2", "5"
-# 修复了所有的数据冒险 (LUI->ADDI, ADDI->SB, LBU->SW)
+# t0 UART 基地址 (0x30000000)
+# t1 临时状态值
+# s0 数据指针 ，指向要发送的第一个数据
+# a0 当前要发送的字符
+# a7 计数器
+# t2 临时寄存器，用于存放 1, 2, 5
 
-.global _start
-_start:
-    # --- 1. 初始化 UART ---
-    lui   t0, 0x30000       # t0 = 0x30000000 (UART 基地址)
-    addi  t1, zero, 3       # t1 = 3 (使能 TX/RX)
-    
-    # 冒险: addi t1 -> sw t1
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
-    sw    t1, 0(t0)         # 写入 UART_CTRL
+lui   t0, 0x30000       # t0 = 0x30000000 (UART 基地址)
+addi  t1, zero, 3       # t1 = 3 (二进制..0011)
+sw    t1, 0(t0)         # 将 3 写入 0x30000000 (UART_CTRL)
+                        # 第0位(发送)和第1位(接收)都为1（使能）
 
-    # --- 2. 在内存中准备数据 ---
-    lui   s0, 0x10000       # s0 = 0x10000000
-    
-    # 冒险: lui s0 -> addi s0
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
-    addi  s0, s0, 4         # s0 = 0x10000004
-    
-    # --- 写 '1' ---
-    addi  t2, zero, 1       # t2 = 1
-    
-    # 冒险: addi s0 -> sb s0 (s0作为基址)
-    # 冒险: addi t2 -> sb t2 (t2作为数据)
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
-    sb    t2, 0(s0)         # 将 1 存入 0x10000004
-    
-    # --- 写 '2' ---
-    addi  t2, zero, 2       # t2 = 2
-    
-    # 冒险: addi t2 -> sb t2
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
-    sb    t2, 1(s0)         # 将 2 存入 0x10000005
+# (设置要发送的数据指针, 假设 第一个数据 存在 0x10000004)
+lui   s0, 0x10000       # s0 = 0x10000000
+addi  s0, s0, 4         # s0 = 0x10000004
 
-    # --- 写 '5' ---
-    addi  t2, zero, 5       # t2 = 5
-    
-    # 冒险: addi t2 -> sb t2
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
-    sb    t2, 2(s0)         # 将 5 存入 0x10000006
 
-    # --- 3. 初始化循环 ---
-    addi  a7, zero, 3       # 计数器 a7 = 3 (发送3个字符)
-    addi  a6, zero, 0       # 计数器 a6 = 0
+addi  t2, zero, 1       # t2 = 1
+sb    t2, 0(s0)         # 将 1 存入内存地址 0x10000004
+
+addi  t2, zero, 2       # t2 = 2
+sb    t2, 1(s0)         # 将 2 存入内存地址 0x10000005
+
+addi  t2, zero, 5       # t2 = 5
+sb    t2, 2(s0)         # 将 5 存入内存地址 0x10000006
+
+
+
+addi  a7, zero, 3       # 初始化计数器 a7 = 3 (发送3个字符)
+
 
 tx_loop_start:
-    beq   a7, a6, tx_loop_end # 计数器为3, 则结束
-    
-    # 冒险: addi s0 (在循环末尾) -> lbu s0 (在循环开头)
-    # (这个冒险由 beq 指令的延迟自动修复了, 通常不需要 NOP)
-    lbu   a0, 0(s0)         # 加载数据 (现在应该能读到 1, 2, 5)
-    
-    # 冒险: lbu a0 -> sw a0
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
-    addi  zero, zero, 0     # NOP
+    beq   a7, zero, tx_loop_end # 计数器为0, 则结束
+    lbu   a0, 0(s0)         # 从 s0 指向的地址加载数据到 a0
+                            # 依次加载1 2 5
+
 
 wait_tx:
-    lw    t1, 4(t0)         # 加载 UART_STATUS
-    andi  t1, t1, 1         # 检查 tx_busy_flag
-    bne   t1, zero, wait_tx # 等待空闲
-    
-    # 冒险: lbu a0 -> sw a0 (数据)
-    # 冒险: lw t1 -> sw a0 (t0 作为基址)
-    # (wait_tx 循环提供了足够的延迟, 此处不需要 NOP)
-    sw    a0, 12(t0)        # 将 a0 (1, 2, 5) 写入 TXDATA
-    
+    lw    t1, 4(t0)         # 从地址t0+4（0x30000004）加载UART_STATUS的值到t1
+    andi  t1, t1, 1         
+    bne   t1, zero, wait_tx 
+
+
+sw    a0, 12(t0)        # 将 a0 写入 0x3000000c (TXDATA)
+
+
     addi  s0, s0, 1         # 数据指针+1
-    addi  a6, a6, 1         # 计数器+1
+    addi  a7, a7, -1        # 计数器-1
     jal   zero, tx_loop_start # 跳回外层循环
 
 tx_loop_end:
-    jal   zero, tx_loop_end # 结束
+    # .. 发送完毕
