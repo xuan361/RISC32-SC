@@ -29,7 +29,7 @@ module Rom(
 
     always @(*)begin
         instruction = ROM[A >> 2];  // 指令
-        RamData = ROM[RamDataAddress];  // RAM数据
+        RamData = ROM[RamDataAddress >> 2];  // RAM数据
     end
 
 endmodule

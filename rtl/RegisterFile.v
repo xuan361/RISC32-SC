@@ -26,8 +26,8 @@ module RegisterFile(
     end
 
     //assign 保证 ReadData1始终与rs地址的寄存器值相同，ReadData2始终与rt地址的寄存器值相同
-    assign A_data = register[A_addr];
-    assign B_data = register[B_addr];
+    assign A_data = (A_addr == 5'b0) ? 32'b0 : register[A_addr];
+    assign B_data = (B_addr == 5'b0) ? 32'b0 : register[B_addr];
 
     // 当写使能信号为1时，在时钟上升沿写入
     always @(posedge CLK or negedge RESET)

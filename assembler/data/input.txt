@@ -15,15 +15,16 @@ lui   s0, 0x10000       # s0 = 0x10000000
 addi  s0, s0, 4         # s0 = 0x10000004
 
 
-addi  t2, zero, 1       # t2 = 1
+addi  t2, zero, 255       # t2 = 255
 sb    t2, 0(s0)         # 将 1 存入内存地址 0x10000004
 
-addi  t2, zero, 2       # t2 = 2
+addi  t2, zero, 0       # t2 = 0
 sb    t2, 1(s0)         # 将 2 存入内存地址 0x10000005
 
-addi  t2, zero, 5       # t2 = 5
+addi  t2, zero, 27       # t2 = 27 (1+2+8+16=27)
 sb    t2, 2(s0)         # 将 5 存入内存地址 0x10000006
 
+# addi a1, zero, 27
 
 
 addi  a7, zero, 3       # 初始化计数器 a7 = 3 (发送3个字符)
@@ -31,7 +32,7 @@ addi  a7, zero, 3       # 初始化计数器 a7 = 3 (发送3个字符)
 
 tx_loop_start:
     beq   a7, zero, tx_loop_end # 计数器为0, 则结束
-    lbu   a0, 0(s0)         # 从 s0 指向的地址加载数据到 a0
+    # lbu   a0, 0(s0)         # 从 s0 指向的地址加载数据到 a0
                             # 依次加载1 2 5
 
 
@@ -40,8 +41,10 @@ wait_tx:
     andi  t1, t1, 1         
     bne   t1, zero, wait_tx 
 
-
-sw    a0, 12(t0)        # 将 a0 写入 0x3000000c (TXDATA)
+    lbu   a0, 0(s0)         # 从 s0 指向的地址加载数据到 a0
+    lbu   a0, 0(s0)         # 从 s0 指向的地址加载数据到 a0
+                            # 依次加载1 2 5
+    sw    a0, 12(t0)        # 将 a0 写入 0x3000000c (TXDATA)
 
 
     addi  s0, s0, 1         # 数据指针+1
@@ -50,3 +53,4 @@ sw    a0, 12(t0)        # 将 a0 写入 0x3000000c (TXDATA)
 
 tx_loop_end:
     # .. 发送完毕
+    jal   zero, tx_loop_end # 跳回外层循环
