@@ -8,7 +8,7 @@ module Uart#(
 )(
     input           CLK,
     input           RESET,
-    input           wUart,       // 片选信号 (来自总线的 wUart)
+    // input           wUart,       // 片选信号 (来自总线的 wUart)
     input           wmem,       // 写使能信号
     input  [31:0]   A_UART,     // 内部地址 (来自总线的 A_UART)
     input  [31:0]   Di,    // 写入的数据 (来自总线的 Di)
@@ -37,13 +37,13 @@ module Uart#(
 
     // -- 波特率时钟分频器计算 --
     reg [31:0] clk_div;
-    always @(*) begin
-        // 根据波特率寄存器的值计算每个比特需要持续的时钟周期数
-        if (uart_baud != 0)
-            clk_div = SYS_CLK_FREQ / uart_baud;
-        else
-            clk_div = SYS_CLK_FREQ / DEFAULT_BAUD; // 如果未设置，则使用默认值
-    end
+    // always @(*) begin
+    //     // 根据波特率寄存器的值计算每个比特需要持续的时钟周期数
+    //     if (uart_baud != 0)
+    //         clk_div = SYS_CLK_FREQ / uart_baud;
+    //     else
+    //         clk_div = SYS_CLK_FREQ / DEFAULT_BAUD; // 如果未设置，则使用默认值
+    // end
 
 // --- 写操作逻辑 ---
     always @(posedge CLK or negedge RESET) begin
@@ -54,10 +54,17 @@ module Uart#(
             uart_txdata <= 32'h0;
             // 状态和接收寄存器由硬件逻辑更新，复位时可初始化
             uart_rxdata <= 32'h0;
-        end else if (wUart && wmem) begin // 当被总线选中且为写操作时
+            clk_div = 32'd5208;
+        end else if (wmem) begin // 当被总线选中且为写操作时
             case(A_UART[4:0]) // 根据地址偏移选择寄存器
                 5'h00: uart_ctrl   <= Di;
-                5'h08: uart_baud   <= Di;
+                5'h08: begin
+                    uart_baud   <= Di;
+                    if(Di != 0)
+                        clk_div <= SYS_CLK_FREQ / Di;
+                    else 
+                        clk_div <=  32'd5208;
+                end
                 5'h0c: begin   
                         // 仅当发送空闲时才接收新数据
                         if (tx_busy_flag == 1'b0) begin
@@ -72,19 +79,15 @@ module Uart#(
 
 // --- 读操作逻辑 ---
     always @(*) begin
-        if (wUart) begin // 当被总线选中且为读操作时
-            case(A_UART[4:0])
-                5'h00: Do_Uart = uart_ctrl;
-                // 5'h04: Do_Uart = {30'b0, uart_status};
-                5'h04: Do_Uart = {30'b0, rx_done_flag, tx_busy_flag};
-                5'h08: Do_Uart = uart_baud;
-                5'h10: Do_Uart = uart_rxdata;
-                // TXDATA 寄存器通常为只写
-                default: Do_Uart = 32'h0;
-            endcase
-        end else begin
-            Do_Uart = 32'h0; // 未选中时输出0
-        end
+        case(A_UART[4:0])
+            5'h00: Do_Uart = uart_ctrl;
+            // 5'h04: Do_Uart = {30'b0, uart_status};
+            5'h04: Do_Uart = {30'b0, rx_done_flag, tx_busy_flag};
+            5'h08: Do_Uart = uart_baud;
+            5'h10: Do_Uart = uart_rxdata;
+            // TXDATA 寄存器通常为只写
+            default: Do_Uart = 32'h0;
+        endcase
     end
 
     // // 当CPU读取接收数据寄存器后，清除接收完成标志
@@ -113,7 +116,7 @@ module Uart#(
     assign uart_tx = tx_reg; // 连接输出引脚
 
     // 触发发送的信号：CPU可以向TXDATA寄存器写入数据
-    wire tx_start_signal = wmem && (A_UART == 5'h0c) && wUart;
+    wire tx_start_signal = wmem && (A_UART == 5'h0c);
 
 
     always @(posedge CLK or negedge RESET) begin

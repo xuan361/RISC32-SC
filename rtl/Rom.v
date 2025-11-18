@@ -6,8 +6,9 @@ module Rom(
     input [31:0] MachineCodeData,   //机器码数据
 
     input [31:0] A,   //指令地址输入入口
-    input [31:0] RamDataAddress,  // RAM数据地址入口                
     output reg[31:0] instruction, //传递给InstructionMemory的指令
+    
+    input [31:0] RamDataAddress,  // RAM数据地址入口                
     output reg[31:0] RamData    // ROM传递给RAM的数据
 );
     // ROM存储区

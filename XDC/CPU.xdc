@@ -1,6 +1,6 @@
 # 时钟与复位约束
 # 50MHz系统时钟约束（对应核心板50MHz晶振）
-create_clock -name CLK -period 20.000 [get_ports CLK]
+create_clock -name CLK -period 200.000 [get_ports CLK]
 set_property PACKAGE_PIN W19   [get_ports CLK]       ;# 核心板50MHz时钟输入
 set_property IOSTANDARD LVCMOS33 [get_ports CLK]
 

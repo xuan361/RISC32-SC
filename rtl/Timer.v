@@ -9,8 +9,8 @@ module Timer(
 
     assign tick = (div_count == 32'd49999); // div_count从0数到49999，产生一个tick
 
-    always @(posedge CLK or posedge RESET) begin
-        if (RESET) begin
+    always @(posedge CLK or negedge RESET) begin
+        if (!RESET) begin
             div_count <= 32'd0; // 复位时，分频计数器清零
         end else begin
             if (tick) begin
@@ -21,8 +21,8 @@ module Timer(
         end
     end
 
-    always @(posedge CLK or posedge RESET) begin
-        if (RESET) begin
+    always @(posedge CLK or negedge RESET) begin
+        if (!RESET) begin
             count <= 32'd0; // 复位时，主计数器清零
         end else begin
             if (tick) begin
@@ -31,8 +31,8 @@ module Timer(
         end
     end
 
-    always @(posedge CLK or posedge RESET) begin
-        if (RESET) begin
+    always @(posedge CLK or negedge RESET) begin
+        if (!RESET) begin
             Do <= 32'd0; // 复位时，输出清零
         end else begin
             Do <= count; // 输出始终等于主计数器值（单位：毫秒）

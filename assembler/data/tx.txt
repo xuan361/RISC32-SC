@@ -12,15 +12,16 @@ sw    t1, 0(t0)         # 将 3 写入 0x30000000 (UART_CTRL)
 
 # (设置要发送的数据指针, 假设 第一个数据 存在 0x10000004)
 lui   s0, 0x10000       # s0 = 0x10000000
+addi  s0, s0, 4         # s0 = 0x10000004
 
 
-addi  t2, zero, 3       # t2 = 1
+addi  t2, zero, 1       # t2 = 1
 sb    t2, 0(s0)         # 将 1 存入内存地址 0x10000004
 
-addi  t2, zero, 1       # t2 = 2
+addi  t2, zero, 2       # t2 = 2
 sb    t2, 1(s0)         # 将 2 存入内存地址 0x10000005
 
-addi  t2, zero, 2       # t2 = 5
+addi  t2, zero, 5       # t2 = 5
 sb    t2, 2(s0)         # 将 5 存入内存地址 0x10000006
 
 
