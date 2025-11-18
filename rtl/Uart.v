@@ -21,14 +21,12 @@ module Uart#(
 
     // 5个内部寄存器
     reg [1:0] uart_ctrl;       // 控制寄存器 @ 0x00第 0位控制发送使能（1为使能，0为禁止），第1位控制接收使能
-    // reg [1:0] uart_status;     // 状态寄存器 @ 0x04 ，在写入发送数据前必须检查此位以确保发送器空闲
+    reg [1:0] uart_status;     // 状态寄存器 @ 0x04 ，在写入发送数据前必须检查此位以确保发送器空闲
     // 第0位为发送忙状态（1表示正在发送，0为空闲），第1位为接收完成标志（1表示接收完成，0表示正在接收）
-    reg tx_busy_flag;   // 状态位 0: 发送忙标志（1表示正在发送，0为空闲）
-    reg rx_done_flag;   // 状态位 1: 接收完成标志 （1表示接收完成，0表示正在接收）
+
     reg [31:0] uart_baud;       // 波特率设置寄存器 @ 0x08
     reg [31:0] uart_txdata;     // 发送数据寄存器 @ 0x0c
     reg [31:0] uart_rxdata;     // 接收数据寄存器 @ 0x10
-    // -- 状态寄存器的组成部分 --
 
 
     // -- 控制寄存器的组成部分 -- 1为可以发送或接收数据
@@ -37,43 +35,49 @@ module Uart#(
 
     // -- 波特率时钟分频器计算 --
     reg [31:0] clk_div;
-    // always @(*) begin
-    //     // 根据波特率寄存器的值计算每个比特需要持续的时钟周期数
-    //     if (uart_baud != 0)
-    //         clk_div = SYS_CLK_FREQ / uart_baud;
-    //     else
-    //         clk_div = SYS_CLK_FREQ / DEFAULT_BAUD; // 如果未设置，则使用默认值
-    // end
+
+    // -- 状态寄存器的组成部分 --
+    reg tx_done_flag;   // 发送忙标志（1表示发送完成）
+    reg rx_done_flag;   // 接收完成标志 （1表示接收完成）
 
 // --- 写操作逻辑 ---
     always @(posedge CLK or negedge RESET) begin
         if (!RESET) begin
             uart_ctrl   <= 2'b11;
-            // uart_status <= 2'b00; // 初始状态：发送空闲，未接收完成
+            uart_status <= 2'b00; // 初始状态：发送空闲，未接收到新数据
             uart_baud   <= DEFAULT_BAUD;
             uart_txdata <= 32'h0;
             // 状态和接收寄存器由硬件逻辑更新，复位时可初始化
             uart_rxdata <= 32'h0;
-            clk_div = 32'd5208;
-        end else if (wmem) begin // 当被总线选中且为写操作时
+            clk_div <= 32'd5208;
+        end 
+        else if (wmem) begin // 当被总线选中且为写操作时
             case(A_UART[4:0]) // 根据地址偏移选择寄存器
                 5'h00: uart_ctrl   <= Di;
+                5'h04: uart_status <= Di[1:0];
                 5'h08: begin
                     uart_baud   <= Di;
                     if(Di != 0)
-                        clk_div <= SYS_CLK_FREQ / Di;
+                        // clk_div <= SYS_CLK_FREQ / Di;
+                        clk_div <=  32'd5208;
                     else 
                         clk_div <=  32'd5208;
                 end
                 5'h0c: begin   
-                        // 仅当发送空闲时才接收新数据
-                        if (tx_busy_flag == 1'b0) begin
-                            uart_txdata <= Di;
-                        end
+                    // 仅当发送空闲时才接收新数据
+                    uart_txdata <= Di;
                     end
-                // STATUS 和 RXDATA 寄存器通常为只读，或有特定写操作清除标志位
+                // RXDATA 寄存器通常为只读，或有特定写操作
                 default: ;
             endcase
+        end
+        else if(rx_done_flag == 1'b1) begin
+            // 接收完成后，设置接收完成标志
+            uart_status[1] <= 1'b1;
+        end
+        else if(tx_done_flag == 1'b1) begin
+            // 发送完成后，设置发送完成标志
+            uart_status[0] <= 1'b0;
         end
     end
 
@@ -81,8 +85,7 @@ module Uart#(
     always @(*) begin
         case(A_UART[4:0])
             5'h00: Do_Uart = uart_ctrl;
-            // 5'h04: Do_Uart = {30'b0, uart_status};
-            5'h04: Do_Uart = {30'b0, rx_done_flag, tx_busy_flag};
+            5'h04: Do_Uart = {30'b0, uart_status};
             5'h08: Do_Uart = uart_baud;
             5'h10: Do_Uart = uart_rxdata;
             // TXDATA 寄存器通常为只写
@@ -90,16 +93,6 @@ module Uart#(
         endcase
     end
 
-    // // 当CPU读取接收数据寄存器后，清除接收完成标志
-    // wire rx_read_signal = !wmem && (A_UART == 5'h10);
-    // always @(posedge CLK or negedge RESET) begin
-    //     if (!RESET) begin
-    //         uart_status[1] <= 1'b0;
-    //     end else if (rx_read_signal) begin
-    //         uart_status[1] <= 1'b0; // 读操作后清除标志
-    //     end
-    //     // 注意: 接收完成标志由接收器逻辑设置
-    // end
 
 
 // Uart 发送器 tx
@@ -115,24 +108,22 @@ module Uart#(
 
     assign uart_tx = tx_reg; // 连接输出引脚
 
-    // 触发发送的信号：CPU可以向TXDATA寄存器写入数据
-    wire tx_start_signal = wmem && (A_UART == 5'h0c);
 
-
+    // 触发发送的标志： uart_status[0] == 1 (发送忙碌) 
     always @(posedge CLK or negedge RESET) begin
         if (!RESET) begin
                 tx_state     <= TX_FREE;
                 tx_clk_count <= 0;
                 tx_bit_index <= 0;
-                tx_busy_flag <= 1'b0;
+                tx_done_flag <= 1'b0;
                 tx_reg       <= 1'b1; // TX线在空闲时为高电平
         end 
         else begin
             case (tx_state)
                 TX_FREE: begin
+                    tx_done_flag <= 1'b0;
                     // 如果发送被使能，并且CPU写入了数据，则开始发送
-                    if (tx_start_signal && tx_enable) begin
-                        tx_busy_flag <= 1'b1;                // 设置发送忙标志
+                    if (uart_status[0] == 1 && tx_enable) begin
                         tx_clk_count <= 0;
                         tx_state     <= TX_START;
                     end 
@@ -166,7 +157,7 @@ module Uart#(
                     if (tx_clk_count == clk_div - 1) begin
                         tx_clk_count <= 0;
                         tx_state     <= TX_FREE; // 发送完成，返回空闲状态
-                        tx_busy_flag <= 1'b0; // 设置发送空闲标志
+                        tx_done_flag <= 1'b1; // 设置发送完成标志
                     end else begin
                         tx_clk_count <= tx_clk_count + 1;
                     end
@@ -202,12 +193,11 @@ module Uart#(
         end else begin
             case (rx_state)
                 RX_FREE: begin
+                    rx_done_flag <= 1'b0; 
                     // 如果接收使能，并且检测到RX线上的下降沿（起始位）
                     if (rx_start_signal) begin
                         rx_state     <= RX_START;
                         rx_clk_count <= 0;
-                        rx_done_flag <= 1'b0; // 设置接收忙标志
-
                     end
                 end
                 
@@ -246,7 +236,7 @@ module Uart#(
                     if(rx_clk_count == clk_div - 1) begin
                         if (uart_rx) begin // 检查停止位是否为高电平 (有效)
                            uart_rxdata  <= {24'b0, rx_data_reg}; // 将接收到的数据放入接收寄存器
-                           rx_done_flag <= 1'b1;                  // 设置接收完成标志
+                           rx_done_flag = 1'b1;    // 设置接收完成标志
                         end
                         // 如果停止位不是高电平，则发生帧错误 (本设计中忽略)
                         rx_state <= RX_FREE; // 返回空闲状态，准备下一次接收

@@ -64,14 +64,14 @@ module Bus(
                 wUart = 0;
                 wGpio = 0; 
             end
-            4'd1: begin
+            4'd1: begin     // ram 模块
                 A_Ram = {4'd0, A[27:0]};
                 Do = Do_Ram;
                 wRam = 1;
                 wUart = 0;
                 wGpio = 0; 
             end
-            4'd2: begin
+            4'd2: begin // timer 模块
                 A_Timer = {4'd0, A[27:0]};
                 Do = Do_Timer;
                 wRam = 0;

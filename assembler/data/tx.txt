@@ -35,14 +35,15 @@ tx_loop_start:
                             # 依次加载1 2 5
 
 
-wait_tx:
-    lw    t1, 4(t0)         # 从地址t0+4（0x30000004）加载UART_STATUS的值到t1
-    andi  t1, t1, 1         
-    bne   t1, zero, wait_tx 
+    wait_tx:
+        lw    t1, 4(t0)         # 从地址t0+4（0x30000004）加载UART_STATUS的值到t1
+        andi  t1, t1, 1         
+        bne   t1, zero, wait_tx 
 
 
-sw    a0, 12(t0)        # 将 a0 写入 0x3000000c (TXDATA)
-
+    sw    a0, 12(t0)        # 将 a0 写入 0x3000000c (TXDATA)
+    ori    t1, t1, 1        # 设置 bit 0 为 1
+    sw     t1, 4(t0)        # 写回 UART_STATUS
 
     addi  s0, s0, 1         # 数据指针+1
     addi  a7, a7, -1        # 计数器-1
