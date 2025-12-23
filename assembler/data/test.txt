@@ -1,0 +1,35 @@
+# 极简回环测试 (Echo Test)
+# 目的：测试串口接收是否正常
+
+# 初始化 UART
+lui   t0, 0x30000
+addi  t1, zero, 3
+sw    t1, 0(t0)         # 使能 TX 和 RX
+
+loop:
+    # 1. 等待接收 (Wait RX)
+    lw    t1, 4(t0)
+    andi  t1, t1, 2     # Check Bit 1
+    beq   t1, zero, loop # 等待...
+
+    # 2. 读取数据
+    lw    a0, 16(t0)    # Read RX DATA
+
+    # 3. 清除接收标志
+    sw    zero, 4(t0)   
+
+    # ------------------------
+    # 4. 直接发回去！(Echo)
+    # ------------------------
+    
+    # 等待发送空闲
+wait_tx:
+    lw    t1, 4(t0)
+    andi  t1, t1, 1
+    bne   t1, zero, wait_tx
+    
+    # 发送刚收到的数据 a0
+    sw    a0, 12(t0)
+
+    # 跳回开始，无限循环
+    jal   zero, loop

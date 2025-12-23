@@ -12,7 +12,7 @@ set_property PULLUP true        [get_ports RESET]    ;# 按键上拉配置
 # 暂停控制信号（预留扩展IO）
 set_property PACKAGE_PIN Y18    [get_ports wait_transport]       ;# 扩展IO CN3_引脚29
 set_property IOSTANDARD LVCMOS33 [get_ports wait_transport]
-set_property PULLDOWN true      [get_ports wait_transport]       ;# 默认下拉防干扰
+set_property PULLUP true      [get_ports wait_transport]       ;# 默认上拉防干扰
 
 
 
@@ -25,7 +25,7 @@ set_property PULLUP true        [get_ports uart_rx]  ;# 串口默认上拉
 # UART输出引脚（对应底板Type-C串口）
 set_property PACKAGE_PIN V17    [get_ports uart_tx]  ;# CH340G_RX
 set_property IOSTANDARD LVCMOS33 [get_ports uart_tx]
-# set_property PULLUP true        [get_ports uart_tx]  ;# 串口默认上拉
+set_property PULLUP true        [get_ports uart_tx]  ;# 串口默认上拉
 
 
 # LED指示灯约束（对应Mini底板LED1-LED4）

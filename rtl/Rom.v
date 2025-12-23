@@ -15,9 +15,9 @@ module Rom(
     reg[31:0] ROM[0:255];
     integer i;
     initial begin 
-        for( i = 0; i < 256; i = i + 1)begin
-            ROM[i] = 32'b0;
-        end
+        // for( i = 0; i < 256; i = i + 1)begin
+        //     ROM[i] = 32'b0;
+        // end
         $readmemb("D:/learn/RISC32-SC/RISC32-SC/assembler/data/output.txt", ROM);
     end
 

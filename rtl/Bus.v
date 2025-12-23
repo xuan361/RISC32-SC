@@ -109,7 +109,6 @@ module Bus(
 
     Ram ram(
         .CLK(CLK),
-        // .cs(wRam),       // Ram 的片选端口连接到 Bus 的 wRam
         .wmem(wmem && wRam),       // Ram 的写使能端口连接到 Bus 的主 wmem
         .memc(memc),
         .A_Ram(A_Ram),
@@ -122,7 +121,6 @@ module Bus(
     Uart uart(
         .CLK(CLK), 
         .RESET(RESET), 
-        // .wUart(wUart),       // 片选信号
         .wmem(wmem && wUart),     // 写使能信号
         .A_UART(A_UART),    // 内部地址
         .Di(Di),       // 写入数据

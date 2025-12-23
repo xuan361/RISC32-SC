@@ -8,7 +8,6 @@ module Uart#(
 )(
     input           CLK,
     input           RESET,
-    // input           wUart,       // 片选信号 (来自总线的 wUart)
     input           wmem,       // 写使能信号
     input  [31:0]   A_UART,     // 内部地址 (来自总线的 A_UART)
     input  [31:0]   Di,    // 写入的数据 (来自总线的 Di)
@@ -22,7 +21,7 @@ module Uart#(
     // 5个内部寄存器
     reg [1:0] uart_ctrl;       // 控制寄存器 @ 0x00第 0位控制发送使能（1为使能，0为禁止），第1位控制接收使能
     reg [1:0] uart_status;     // 状态寄存器 @ 0x04 ，在写入发送数据前必须检查此位以确保发送器空闲
-    // 第0位为发送忙状态（1表示正在发送，0为空闲），第1位为接收完成标志（1表示接收完成，0表示正在接收）
+    // 第0位为发送忙状态（0为空闲），第1位为接收完成标志（1表示接收到新数据）
 
     reg [31:0] uart_baud;       // 波特率设置寄存器 @ 0x08
     reg [31:0] uart_txdata;     // 发送数据寄存器 @ 0x0c
@@ -48,7 +47,6 @@ module Uart#(
             uart_baud   <= DEFAULT_BAUD;
             uart_txdata <= 32'h0;
             // 状态和接收寄存器由硬件逻辑更新，复位时可初始化
-            uart_rxdata <= 32'h0;
             clk_div <= 32'd5208;
         end 
         else if (wmem) begin // 当被总线选中且为写操作时
@@ -66,17 +64,19 @@ module Uart#(
                 5'h0c: begin   
                     // 仅当发送空闲时才接收新数据
                     uart_txdata <= Di;
+                    uart_status[0] <= 1'b1;     // 设置发送忙标志
                     end
                 // RXDATA 寄存器通常为只读，或有特定写操作
+                // 5'h10: uart_rxdata <= Di;
                 default: ;
             endcase
         end
         else if(rx_done_flag == 1'b1) begin
-            // 接收完成后，设置接收完成标志
+            // 接收完成后，设置"接收到新数据"状态
             uart_status[1] <= 1'b1;
         end
         else if(tx_done_flag == 1'b1) begin
-            // 发送完成后，设置发送完成标志
+            // 发送完成后，设置"发送完成"状态
             uart_status[0] <= 1'b0;
         end
     end
@@ -121,9 +121,9 @@ module Uart#(
         else begin
             case (tx_state)
                 TX_FREE: begin
-                    tx_done_flag <= 1'b0;
+                    if(tx_done_flag == 1'b1) tx_done_flag <= 1'b0;
                     // 如果发送被使能，并且CPU写入了数据，则开始发送
-                    if (uart_status[0] == 1 && tx_enable) begin
+                    else if (uart_status[0] == 1 && tx_enable) begin
                         tx_clk_count <= 0;
                         tx_state     <= TX_START;
                     end 
@@ -188,9 +188,11 @@ module Uart#(
             rx_state     <= RX_FREE;
             rx_clk_count <= 0;
             rx_bit_index <= 0;
-            uart_rxdata  <= 32'b0;
+            uart_rxdata  <= 32'd0;
             rx_done_flag <= 1'b0;   // 小小改动
-        end else begin
+        end 
+
+        else begin
             case (rx_state)
                 RX_FREE: begin
                     rx_done_flag <= 1'b0; 
@@ -235,11 +237,11 @@ module Uart#(
                     // 等待一个比特时间，检查停止位
                     if(rx_clk_count == clk_div - 1) begin
                         if (uart_rx) begin // 检查停止位是否为高电平 (有效)
-                           uart_rxdata  <= {24'b0, rx_data_reg}; // 将接收到的数据放入接收寄存器
-                           rx_done_flag = 1'b1;    // 设置接收完成标志
+                            uart_rxdata  <= {24'b0, rx_data_reg}; // 将接收到的数据放入接收寄存器
+                            rx_done_flag = 1'b1;    // 设置接收完成标志
+                            rx_state <= RX_FREE; // 返回空闲状态，准备下一次接收
                         end
                         // 如果停止位不是高电平，则发生帧错误 (本设计中忽略)
-                        rx_state <= RX_FREE; // 返回空闲状态，准备下一次接收
                     end else begin
                         rx_clk_count <= rx_clk_count + 1;
                     end
@@ -250,4 +252,5 @@ module Uart#(
         end
     end
 
+ 
 endmodule

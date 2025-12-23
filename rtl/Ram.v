@@ -14,13 +14,9 @@ module Ram(
 );
 
     // 内存区RAM, 256字节
-    reg [7:0] RAM[0:255];  // 以字节为单位
+    reg [7:0] RAM[0:63];  // 以字节为单位
     integer i;
-    initial begin
-        for(i = 0; i < 256; i = i + 1) begin
-            RAM[i] <= 8'd2;
-        end
-    end
+
 
     wire[31:0] A_byte = A_Ram;
     wire[31:0] A_halfWord = (A_Ram >> 1) << 1;

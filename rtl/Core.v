@@ -136,9 +136,11 @@ module Core(
     always @(*) begin
         if(state_reg == S_LOAD_DONE || state_reg == S_RUNNING) begin
             uart_rx_inside = uart_rx; // 串口输入选择
+            uart_rx_outside = 1'b1;
         end
         else begin
-            uart_rx_outside = uart_rx; // 串口输入选择
+            uart_rx_inside = 1'b1;
+            uart_rx_outside = uart_rx; 
         end
     end
     
@@ -151,6 +153,7 @@ module Core(
         MachineCodeAddress <= 0;
         // ... 其他寄存器初始化
     end
+    // 指令下载ing
     always @(posedge CLK or negedge RESET) begin
         if (!RESET) begin
             state_reg <= S_RUNNING;
