@@ -1,7 +1,7 @@
 module Gpio(
     input           CLK,
     input           RESET,
-    input           wGpio,       // 片选信号 (连接到总线的 wGpio)
+    // input           wGpio,       // 片选信号 (连接到总线的 wGpio)
     input           wmem,       // 写使能信号
     input  [31:0]   A_GPIO,     // 内部地址 (连接到总线的 A_GPIO)
     input  [31:0]   Di,    // 写入的数据 (连接到总线的 Di)
@@ -53,7 +53,7 @@ module Gpio(
             smg_reg[6] <= 8'h00;
         end
         // 只有当被总线选中且是写操作时才执行
-        else if(wGpio && wmem) begin 
+        else if(wmem) begin 
             // 使用地址的低位作为内部偏移地址
             case(A_GPIO[3:0])
                 4'h0: led_reg <= Di[7:0];    // 偏移0x0: 写入LED
@@ -70,21 +70,16 @@ module Gpio(
 // 读操作逻辑 (组合逻辑)
     always @(*) begin
         // 只有当被总线选中且是读操作时才输出数据
-        if (wGpio) begin
-            case(A_GPIO[3:0])
-                4'h0: Do_Gpio = {24'b0, led_reg};
-                4'h1: Do_Gpio = {24'b0, smg_reg[1]};
-                4'h2: Do_Gpio = {24'b0, smg_reg[2]};
-                4'h3: Do_Gpio = {24'b0, smg_reg[3]};
-                4'h4: Do_Gpio = {24'b0, smg_reg[4]};
-                4'h5: Do_Gpio = {24'b0, smg_reg[5]};
-                4'h6: Do_Gpio = {24'b0, smg_reg[6]};
-                default: Do_Gpio = 32'h00000000;
-            endcase
-        end 
-        else begin
-            Do_Gpio = 32'h00000000; // 未选中读操作时，输出0
-        end
+        case(A_GPIO[3:0])
+            4'h0: Do_Gpio = {24'b0, led_reg};
+            4'h1: Do_Gpio = {24'b0, smg_reg[1]};
+            4'h2: Do_Gpio = {24'b0, smg_reg[2]};
+            4'h3: Do_Gpio = {24'b0, smg_reg[3]};
+            4'h4: Do_Gpio = {24'b0, smg_reg[4]};
+            4'h5: Do_Gpio = {24'b0, smg_reg[5]};
+            4'h6: Do_Gpio = {24'b0, smg_reg[6]};
+            default: Do_Gpio = 32'h00000000;
+        endcase
     end
 
 

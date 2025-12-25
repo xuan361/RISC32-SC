@@ -117,7 +117,6 @@ module Bus(
     );
     Timer timer(CLK, RESET, Do_Timer);
     
-    // 仍需完善
     Uart uart(
         .CLK(CLK), 
         .RESET(RESET), 
