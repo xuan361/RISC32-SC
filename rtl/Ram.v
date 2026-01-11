@@ -14,7 +14,7 @@ module Ram(
 );
 
     // 内存区RAM, 256字节
-    reg [7:0] RAM[0:63];  // 以字节为单位
+    reg [7:0] RAM[0:255];  // 以字节为单位
     integer i;
 
 

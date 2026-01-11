@@ -9,8 +9,14 @@ BAUD_RATE = 9600
 
 # 注意路径地址对应
 # CODE_FILE = "led.bin"
-CODE_FILE = "timer_display.bin"
-# CODE_FILE = "rx_and_print.bin"
+# CODE_FILE = "gpio.bin"
+# CODE_FILE = "timer.bin"
+CODE_FILE = "timer(15).bin"
+# CODE_FILE = "timer(13).bin"
+# CODE_FILE = "timer(12).bin"
+# CODE_FILE = "timer_display.bin"
+
+# CODE_FILE = "rx_print.bin"
 # CODE_FILE = "input.bin"
 
 
